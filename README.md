@@ -17,14 +17,10 @@ This is a simple and interactive **Tenzies game** built with **React**. The game
 This project is a fun and simple implementation of the classic Tenzies dice game, allowing users to test their luck and try to match all dice values.
 
 ### Installation (For Development)
-    ```bash
     npm install
-    ```
 
 ### Running the Project (For Development)
-    ```bash
     npm run dev
-    ```
 
 ## React + Vite
 
