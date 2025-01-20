@@ -1,35 +1,110 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useRef, useState } from 'react'
+import { nanoid } from 'nanoid'
+import { useWindowSize } from 'react-use'
+import ReactConfetti from 'react-confetti'
+import Die from './components/Die'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+	const generateAllNewDice = () => new Array(10).fill(0).map(() => ({
+		id: nanoid(),
+		value: Math.ceil(Math.random() * 6),
+		isHeld: false
+	}))
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+
+	const [dice, setDice] = useState(generateAllNewDice)
+	const [count, setCount] = useState(0)
+	const newGameRef = useRef(null)
+	const { width, height } = useWindowSize()
+	
+
+	const hold = (id) => {
+		setDice(prevDice => prevDice.map(dieObj => dieObj.id === id ? {
+			...dieObj,
+			isHeld: !dieObj.isHeld
+		} : dieObj))
+	}
+
+	const isAllDiceHeld = () => {
+		for (let i = 0; i < 10; ++i) {
+			if (!dice[i].isHeld) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	const isAllDiceSame = () => {
+		for (let i = 1; i < 10; ++i) {
+			if (dice[i].value !== dice[0].value) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	const gameWon = isAllDiceHeld() && isAllDiceSame()
+
+	useEffect(() => {
+		if (gameWon) {
+			newGameRef.current.focus()
+		}
+	}, [gameWon])
+
+	const rollDice = () => {
+		if (gameWon) {
+			setDice(generateAllNewDice())
+			setCount(0)
+		}
+		else {
+			setDice(prevDice => prevDice.map(dieObj => dieObj.isHeld ? dieObj : {
+				...dieObj,
+				value: Math.ceil(Math.random() * 6)
+			}))
+
+			setCount(prevCount => prevCount + 1)
+		}
+	}
+
+	return (
+		<main>
+			{gameWon && (
+				<ReactConfetti 
+					width={width}
+					height={height}
+				/>
+			)}
+			<div aria-live='polite' className='sr-only'>
+				{gameWon && <p>You won! Press "New Game" to start again.</p>}
+			</div>
+			<p className='counter'>Number of Roll: <span>{count}</span></p>
+			<div className='game-desc'>
+				<h1>Tenzies</h1>
+				<p>Roll until all dice are the same. Click each dice to freeze it at its current value between rolls.</p>
+			</div>
+			<div className='dice-container'>
+				{dice.map(dieObj => (
+					<Die 
+						key={dieObj.id}
+						id={dieObj.id}
+						value={dieObj.value}
+						isHeld={dieObj.isHeld}
+						hold={hold}
+					/>
+				))}
+			</div>
+			<button 
+				className='roll-dice-btn'
+				onClick={rollDice}
+				ref={newGameRef}
+			>
+				{gameWon ? "New Game" : "Roll"}
+			</button>
+		</main>
+	)
 }
 
 export default App
